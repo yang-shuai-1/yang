@@ -1,0 +1,6 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#FAFAF7"/>
+  <polygon points="400,180 500,380 300,380" stroke="#D1CDC5" stroke-width="1.5" fill="none"/>
+  <circle cx="400" cy="280" r="30" stroke="#D1CDC5" stroke-width="1" fill="none"/>
+  <text x="400" y="420" text-anchor="middle" fill="#9E9A92" font-size="14" font-family="sans-serif">封面图占位</text>
+</svg>
