@@ -1,55 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { isAuthenticated } from "@/lib/auth";
+import { getAllWorks, saveWork } from "@/lib/works-file";
 
-// Public GET — only published works
 export async function GET() {
   try {
-    const works = await prisma.work.findMany({
-      where: { published: true },
-      orderBy: [{ sortOrder: "asc" }, { year: "desc" }],
-    });
-    return NextResponse.json(works);
+    const authed = await isAuthenticated();
+    const works = getAllWorks();
+    // Admin sees all, public sees only published
+    const result = authed ? works : works.filter((w) => w.published);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Failed to fetch works:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch works" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
 
-// Admin-only POST
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authed = await isAuthenticated();
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await request.json();
-    const work = await prisma.work.create({
-      data: {
-        title: body.title,
-        slug: body.slug,
-        category: body.category,
-        description: body.description,
-        content: body.content || null,
-        coverImage: body.coverImage,
-        images: body.images || [],
-        techStack: body.techStack || [],
-        liveUrl: body.liveUrl || null,
-        year: body.year,
-        sortOrder: body.sortOrder || 0,
-        published: body.published ?? true,
-      },
+    const slug = body.slug || body.title.replace(/\s+/g, "-").toLowerCase();
+
+    saveWork({
+      title: body.title,
+      slug,
+      category: body.category || "other",
+      description: body.description || "",
+      coverImage: body.coverImage || "",
+      images: body.images || [],
+      techStack: body.techStack || [],
+      liveUrl: body.liveUrl || undefined,
+      featured: body.featured || false,
+      year: body.year || new Date().getFullYear(),
+      sortOrder: body.sortOrder || 0,
+      published: body.published ?? true,
+      content: body.content || "",
     });
-    return NextResponse.json(work, { status: 201 });
+
+    return NextResponse.json({ ok: true, slug }, { status: 201 });
   } catch (error) {
     console.error("Failed to create work:", error);
-    return NextResponse.json(
-      { error: "Failed to create work" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

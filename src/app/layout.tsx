@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { PageTracker } from "@/components/layout/page-tracker";
 import "./globals.css";
 import { siteConfig } from "@/lib/site-config";
 
@@ -30,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="h-full antialiased" suppressHydrationWarning>
       <body className="flex min-h-full flex-col bg-[var(--bg-base)] text-[var(--text-primary)]">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>{children}<PageTracker /></ThemeProvider>
       </body>
     </html>
   );

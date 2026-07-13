@@ -15,10 +15,11 @@ const workSchema = z.object({
   category: z.string().min(1, "请选择分类"),
   description: z.string().min(1, "描述不能为空"),
   content: z.string().default(""),
-  coverImage: z.string().min(1, "封面图 URL 不能为空"),
+  coverImage: z.string().default(""),
   year: z.coerce.number().int().min(2010).max(2030),
   sortOrder: z.coerce.number().int().default(0),
   published: z.coerce.boolean().default(true),
+  featured: z.coerce.boolean().default(false),
   liveUrl: z.string().default(""),
   techStack: z.string().default(""),
 });
@@ -26,8 +27,8 @@ const workSchema = z.object({
 type WorkFormValues = z.infer<typeof workSchema>;
 
 const CATEGORIES = [
-  { value: "brand-design", label: "品牌设计" },
-  { value: "web-development", label: "网页开发" },
+  { value: "web-development", label: "代码项目" },
+  { value: "blog", label: "博客日记" },
   { value: "photography", label: "摄影" },
   { value: "other", label: "其他" },
 ];
@@ -74,32 +75,20 @@ export function WorkForm({
 
   const coverImage = watch("coverImage");
 
-  const handleCoverUpload = async (file: File) => {
+  const handleCoverUpload = async (file: File, base64: string) => {
     setCoverUploading(true);
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          folder: "works",
-        }),
+        body: JSON.stringify({ base64, filename: file.name, folder: "works" }),
       });
-      if (!res.ok) throw new Error("Failed to get upload URL");
-      const { presignedUrl, publicUrl } = await res.json();
-
-      const uploadRes = await fetch(presignedUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
-      });
-      if (!uploadRes.ok) throw new Error("Upload failed");
-
-      setValue("coverImage", publicUrl);
-      toast.success("封面上传成功");
+      const data = await res.json();
+      setValue("coverImage", data.url || base64);
+      toast.success(data.fallback ? "COS 未配置，已用本地存储" : "封面上传成功");
     } catch {
-      toast.error("上传失败，请重试");
+      setValue("coverImage", base64);
+      toast.success("已用本地存储");
     } finally {
       setCoverUploading(false);
     }
@@ -177,8 +166,10 @@ export function WorkForm({
         <div className="mt-3">
           <input {...register("coverImage")} className={inputClass} placeholder="或直接粘贴图片 URL" />
         </div>
-        {coverImage && (
+        {coverImage ? (
           <p className="mt-1 text-xs text-[var(--text-tertiary)] truncate">当前: {coverImage}</p>
+        ) : (
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">不填则使用默认占位图</p>
         )}
         {errors.coverImage && <p className={errorClass}>{errors.coverImage.message}</p>}
       </div>
@@ -198,10 +189,14 @@ export function WorkForm({
           <label className={labelClass}>排序权重</label>
           <input {...register("sortOrder")} type="number" className={inputClass} />
         </div>
-        <div className="flex items-end pb-2.5">
+        <div className="flex items-end pb-2.5 gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" {...register("published")} className="h-4 w-4 rounded border-[var(--border-strong)] accent-[var(--accent)]" />
             <span className="text-sm font-medium text-[var(--text-primary)]">发布</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" {...register("featured")} className="h-4 w-4 rounded border-[var(--border-strong)] accent-[var(--accent)]" />
+            <span className="text-sm font-medium text-[var(--accent)]">编辑推荐</span>
           </label>
         </div>
       </div>

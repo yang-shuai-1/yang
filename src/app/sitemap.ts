@@ -1,9 +1,9 @@
 import { MetadataRoute } from "next";
-import { getAllWorkSlugs } from "@/lib/works";
+import { getAllWorks } from "@/lib/works-file";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const slugs = getAllWorkSlugs();
+  const slugs = getAllWorks().filter(w => w.published).map(w => w.slug);
 
   const workPages = slugs.map((slug) => ({
     url: `${baseUrl}/works/${slug}`,

@@ -9,6 +9,7 @@ export interface WorkFrontmatter {
   liveUrl?: string;
   year: number;
   sortOrder: number;
+  featured: boolean;
   published: boolean;
 }
 
@@ -16,12 +17,12 @@ export interface WorkWithContent extends WorkFrontmatter {
   content: string;
 }
 
-export type WorkCategory = "all" | "brand-design" | "web-development" | "photography" | "other";
+export type WorkCategory = "all" | "web-development" | "blog" | "photography" | "other";
 
 export const CATEGORY_LABELS: Record<string, string> = {
   all: "全部",
-  "brand-design": "品牌设计",
-  "web-development": "网页开发",
+  "web-development": "代码项目",
+  blog: "博客日记",
   photography: "摄影",
   other: "其他",
 };

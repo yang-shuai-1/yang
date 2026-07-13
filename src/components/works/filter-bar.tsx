@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: "全部",
-  "brand-design": "品牌设计",
-  "web-development": "网页开发",
+  "web-development": "代码项目",
+  blog: "博客日记",
   photography: "摄影",
   other: "其他",
 };

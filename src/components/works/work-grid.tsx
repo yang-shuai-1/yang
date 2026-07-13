@@ -15,8 +15,8 @@ export interface WorkGridItem {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  "brand-design": "品牌设计",
-  "web-development": "网页开发",
+  "web-development": "代码项目",
+  blog: "博客日记",
   photography: "摄影",
   other: "其他",
 };
@@ -28,6 +28,7 @@ interface WorkCardProps {
 
 export function WorkCard({ work, priority }: WorkCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const isGated = work.category === "photography" || work.category === "blog";
 
   const imageSrc =
     work.coverImage?.startsWith("/") ||
@@ -43,6 +44,25 @@ export function WorkCard({ work, priority }: WorkCardProps) {
   const fallbackSrc =
     placeholders[Math.abs(work.slug.length) % placeholders.length];
 
+  const ImageContent = (
+    <div className="relative block w-full aspect-[4/3] overflow-hidden bg-[var(--bg-elevated)]">
+      <Image
+        src={imageSrc}
+        alt={work.title}
+        fill
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+        priority={priority}
+        onError={(e) => {
+          const img = e.currentTarget;
+          if (img.src !== fallbackSrc) {
+            img.src = fallbackSrc;
+          }
+        }}
+      />
+    </div>
+  );
+
   return (
     <>
       <article
@@ -55,26 +75,20 @@ export function WorkCard({ work, priority }: WorkCardProps) {
           "hover:after:w-[2px]"
         )}
       >
-        <button
-          onClick={() => setLightboxOpen(true)}
-          className="relative block w-full aspect-[4/3] overflow-hidden bg-[var(--bg-elevated)] cursor-zoom-in"
-          aria-label={`查看 ${work.title} 的大图`}
-        >
-          <Image
-            src={imageSrc}
-            alt={work.title}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
-            priority={priority}
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (img.src !== fallbackSrc) {
-                img.src = fallbackSrc;
-              }
-            }}
-          />
-        </button>
+        {/* Gated content: image clicks go to detail page; otherwise: lightbox */}
+        {isGated ? (
+          <Link href={`/works/${work.slug}`} className="block">
+            {ImageContent}
+          </Link>
+        ) : (
+          <button
+            onClick={() => setLightboxOpen(true)}
+            className="block w-full cursor-zoom-in"
+            aria-label={`查看 ${work.title} 的大图`}
+          >
+            {ImageContent}
+          </button>
+        )}
 
         <div className="p-5">
           <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">

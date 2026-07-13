@@ -1,56 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { isAuthenticated } from "@/lib/auth";
+import fs from "fs";
+import path from "path";
 
-// Public GET — resume metadata (not sensitive for a personal site)
-export async function GET() {
+const DATA_FILE = path.join(process.cwd(), "content", "resume.json");
+
+function readResume() {
   try {
-    const resume = await prisma.resume.findUnique({
-      where: { id: "default" },
-      include: {
-        versions: {
-          orderBy: { createdAt: "desc" },
-          take: 10,
-        },
-      },
-    });
-    return NextResponse.json(resume || null);
-  } catch (error) {
-    console.error("Failed to fetch resume:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch resume" },
-      { status: 500 }
-    );
-  }
+    if (!fs.existsSync(DATA_FILE)) return null;
+    return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
+  } catch { return null; }
 }
 
-// Admin-only PUT
+function writeResume(data: Record<string, unknown>) {
+  const dir = path.dirname(DATA_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+}
+
+export async function GET() {
+  const data = readResume();
+  return NextResponse.json(data);
+}
+
 export async function PUT(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authed = await isAuthenticated();
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  try {
-    const body = await request.json();
-    const { filename, path, size, mimeType } = body;
-
-    const resume = await prisma.resume.upsert({
-      where: { id: "default" },
-      update: { filename, path, size, mimeType },
-      create: { id: "default", filename, path, size, mimeType },
-    });
-
-    await prisma.resumeVersion.create({
-      data: { resumeId: resume.id, filename, path, size, mimeType },
-    });
-
-    return NextResponse.json(resume);
-  } catch (error) {
-    console.error("Failed to update resume:", error);
-    return NextResponse.json(
-      { error: "Failed to update resume" },
-      { status: 500 }
-    );
-  }
+  const body = await request.json();
+  const existing = readResume() || {};
+  const merged = { ...existing, ...body, updatedAt: new Date().toISOString() };
+  writeResume(merged);
+  return NextResponse.json(merged);
 }

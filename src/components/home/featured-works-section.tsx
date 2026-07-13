@@ -1,16 +1,12 @@
 import Link from "next/link";
-import { getAllWorks } from "@/lib/works";
-import { getAllWorksFromDB } from "@/lib/works-db";
+import { getAllWorks } from "@/lib/works-file";
 import { WorkCard } from "@/components/home/featured-works";
 import { HairlineRule } from "@/components/layout/hairline-rule";
 
 export async function FeaturedWorks() {
-  let dbWorks = await getAllWorksFromDB();
-  if (dbWorks.length === 0) {
-    dbWorks = getAllWorks();
-  }
-
-  const works = dbWorks.slice(0, 3);
+  const allWorks = getAllWorks();
+  const publishedWorks = allWorks.filter((w) => w.published);
+  const works = publishedWorks.slice(0, 3);
 
   if (works.length === 0) {
     return (
@@ -38,7 +34,7 @@ export async function FeaturedWorks() {
           ))}
         </div>
 
-        {dbWorks.length > 3 && (
+        {allWorks.filter((w) => w.published).length > 3 && (
           <div className="mt-10 text-center">
             <Link
               href="/works"

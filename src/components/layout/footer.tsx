@@ -7,7 +7,6 @@ import { siteConfig } from "@/lib/site-config";
 const SOCIAL_LINKS = [
   { label: "GitHub", href: siteConfig.socialLinks.github },
   { label: "Twitter", href: siteConfig.socialLinks.twitter },
-  { label: "LinkedIn", href: siteConfig.socialLinks.linkedin },
   { label: "Email", href: `mailto:${siteConfig.socialLinks.email}` },
 ];
 
